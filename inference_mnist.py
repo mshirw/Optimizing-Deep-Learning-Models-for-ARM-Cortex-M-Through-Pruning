@@ -1,0 +1,236 @@
+import torch
+import util
+import copy
+import numpy as np
+import torch.nn as nn
+from net.alexnet import AlexNet
+from net.quantization import weight_quantization, Quantize, Quantize_2, FracBits, Shift_Right_Bits, ShiftRight, Quantize_torch, FracBits_torch
+import torch.nn.functional as F
+import torchvision
+from torchvision import datasets, transforms
+from torch.nn.modules.module import Module
+from net.prune import PruningModule, MaskedLinear
+from net.models import LeNet_5_onnx
+
+np.set_printoptions(suppress=True)
+np.set_printoptions(threshold=np.inf)
+
+no_cuda = False
+use_cuda = not no_cuda and torch.cuda.is_available()
+device = torch.device("cuda:0" if use_cuda else 'cpu')
+
+output_shift_dict = {}
+stats = {}
+batch_count = 0
+fc_size = 0
+
+test_loader = torch.utils.data.DataLoader(
+    datasets.MNIST('data', train=False, transform=transforms.Compose([
+                       transforms.ToTensor(),
+                       transforms.Normalize((0.1307,), (0.3081,))
+                   ])), batch_size=200, shuffle=False)
+
+def test(model, quant=False):
+    model.eval()
+    test_loss = 0
+    correct = 0
+    flag = False
+    count = 0
+    with torch.no_grad():
+        for data, target in test_loader:
+            data, target = data.to(device), target.to(device)
+            if quant == True:
+                data = Quantize_torch(data.cpu(), FracBits_torch(data.cpu()))
+                # data = Quantize_2(data.cpu(), 8)
+                data = data.to(device)
+
+            # output = model(data)
+            output = mnist_quant_activate_inference(model, data)
+            test_loss += F.cross_entropy(output, target, reduction='sum').item()
+            pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
+            correct += pred.eq(target.data.view_as(pred)).sum().item()
+            count += 1
+
+        test_loss /= len(test_loader.dataset)
+        accuracy = 100. * correct / len(test_loader.dataset)
+        print(f'Test set: Average loss: {test_loss:.4f}, Accuracy: {correct}/{len(test_loader.dataset)} ({accuracy:.2f}%)')
+    return accuracy
+
+def Quant_activate(data):
+    out = Quantize(data.cpu().detach().numpy(), FracBits(data.cpu().detach().numpy()))
+    out = torch.from_numpy(out.astype('float')).type(torch.FloatTensor)
+    out = out.to(device)
+    return out
+
+def Shiftright_activate(data, shift_right_bit):
+    x = ShiftRight(data.cpu().detach().numpy().astype(int), shift_right_bit)
+    x = torch.from_numpy(x.astype('double')).type(torch.FloatTensor)
+    x = x.to(device)
+    return x
+
+def update_stats(stats, key, shift_bit):
+    
+    if key not in stats:
+        stats[key] = {"shift_bit": 0, "batch_count": 1}
+    else:
+        stats[key]["shift_bit"] += shift_bit
+        stats[key]["batch_count"] += 1
+    
+    return stats
+
+def mnist_quant_activate_inference(model, data):
+    x = data
+    global batch_count
+    global stats
+    global fc_size
+    batch_count += 1
+
+    # Conv1
+    x = model.conv1(x)
+    # print("conv1_output_size:{}".format(x.size()))
+    shift_right_bit = Shift_Right_Bits(x.cpu().detach().numpy().astype(int))
+    x = Shiftright_activate(x, shift_right_bit)
+    name = "CONV0"
+    output_shift_dict.update({name: shift_right_bit})
+    stats = update_stats(stats, name, shift_right_bit)
+
+    x = F.relu(x)
+    x = F.max_pool2d(x, kernel_size=(2, 2), stride=2)
+    # print("maxpool1_output_size:{}".format(x.size()))
+
+    # Conv2
+    x = model.conv2(x)
+    # print("conv2_output_size:{}".format(x.size()))
+    shift_right_bit = Shift_Right_Bits(x.cpu().detach().numpy().astype(int))
+    x = Shiftright_activate(x, shift_right_bit)
+    name = "CONV1"
+    output_shift_dict.update({name: shift_right_bit})
+    stats = update_stats(stats, name, shift_right_bit)
+
+    x = F.relu(x)
+    x = F.max_pool2d(x, kernel_size=(3, 3), stride=3)
+    # print("maxpool2_output_size:{}".format(x.size()))
+    fc_size = x.cpu().detach().numpy().shape[1:]
+    # print(fc_size)
+    # Fully-connected
+    x = torch.flatten(x, 1)
+    x = model.fc1(x)
+    shift_right_bit = Shift_Right_Bits(x.cpu().detach().numpy().astype(int))
+    x = Shiftright_activate(x, shift_right_bit)
+    name = "FC0"
+    output_shift_dict.update({name: shift_right_bit})
+    stats = update_stats(stats, name, shift_right_bit)
+
+    x = F.log_softmax(x, dim=1)
+    
+    return x
+
+def GetLayerChannels(model):
+    channels_list = []
+    for layer in model.children():
+        if isinstance(layer, nn.Conv2d):
+            channels_list.append(layer.weight.data.size()[0])
+        elif isinstance(layer, nn.Linear):
+            channels_list.append(layer.weight.data.size()[1])
+    
+    return channels_list
+
+conv_list = ["conv1", "conv2"]
+
+model = torch.load("./saves/mnist_noprune_9911.ptmodel")
+print(model)
+util.print_nonzeros(model)
+print("--- Quantization ---")
+model = weight_quantization(model)
+model = model.to(device)
+test(model, True)
+print(stats)
+for key in stats:
+    output_shift_dict[key] = int(np.round(stats[key]["shift_bit"] / stats[key]["batch_count"]))
+
+print(output_shift_dict)
+print("--- Output weight ---")
+conv_output_channel = [8, 16]
+count = 0
+# channels_list = GetLayerChannels(model)
+
+
+model_weight = open("cortexm_weight.h","w")
+# cortexm_weight_0_8_256_conv1_20.h
+for m in output_shift_dict:
+    model_weight.write("#define ")
+    model_weight.write(str(m) + "_OUT_SHIFT ")
+    model_weight.write(str(output_shift_dict[m]))
+    model_weight.write("\n")
+
+model_weight.write("\n")
+
+for i in range(len(conv_output_channel)):
+    model_weight.write("#define ")
+    model_weight.write("CONV" + str(i) + "_BIAS {")
+    for k in range(int(conv_output_channel[i])):
+        if k == int(conv_output_channel[i]) - 1:
+            model_weight.write('0')
+        else:
+            model_weight.write("0, ")
+
+    model_weight.write("}")
+    model_weight.write("\n")
+
+model_weight.write("#define ")
+model_weight.write("FC0_BIAS {")
+for i in range(10):
+    if i == 9:
+        model_weight.write('0')
+    else:
+        model_weight.write("0, ")
+
+model_weight.write("}")
+model_weight.write("\n")
+
+model_weight.write("\n")
+
+for k in range(2):
+    # weight_name = "feature." + k + ".module.weight"    
+    conv1_weight = model.state_dict()["conv" + str(k+1) + ".weight"].cpu().numpy().astype(int)
+    conv1_weight = conv1_weight.transpose(0, 2, 3, 1)
+    print("weight_shape:{}".format(conv1_weight.shape))
+    conv1_weight = conv1_weight.flatten().astype(int)
+
+    model_weight.write("#define ")
+    model_weight.write("CONV" + str(count) + "_WEIGHT {")
+    count += 1
+
+    for i in range(len(conv1_weight)):
+        if i == len(conv1_weight) - 1:
+            model_weight.write(str(conv1_weight[i]))
+        else:
+            model_weight.write(str(conv1_weight[i]) + ', ')
+
+    model_weight.write("}")
+    model_weight.write("\n")
+    model_weight.write("\n")
+
+fc_reshape = [10]
+for i in range(len(fc_size)):
+    fc_reshape.append(fc_size[i])
+
+print(fc_reshape)
+
+weight_name = "fc1.weight"
+fc_weight = model.state_dict()[weight_name].cpu().numpy().astype(int)
+fc_weight = fc_weight.reshape(fc_reshape).transpose(0,2,3,1).reshape(10, fc_weight.shape[1])
+print("fc_weight:{}".format(fc_weight.shape))
+fc_weight = fc_weight.flatten().astype(int)
+model_weight.write("#define ")
+defname = "FC" + "0" + "_WEIGHT {"
+model_weight.write(defname)
+for j in range(len(fc_weight)):
+    if j == len(fc_weight) - 1:
+        model_weight.write(str(fc_weight[j]))
+    else:
+        model_weight.write(str(fc_weight[j]) + ', ')
+
+model_weight.write("}")
+model_weight.write("\n")
+model_weight.close()

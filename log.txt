@@ -1,0 +1,4 @@
+initial_accuracy 44.47
+initial_accuracy 46.08
+initial_accuracy 45.11
+initial_accuracy 98.11
