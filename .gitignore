@@ -1,0 +1,9 @@
+__pycache__/
+
+cifar_test_bin/
+
+mnist_test_bin/
+
+saves_/
+
+data/
