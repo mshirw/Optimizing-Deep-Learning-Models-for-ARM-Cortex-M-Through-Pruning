@@ -113,7 +113,7 @@ def vgg_quant_activate_inference(model, data):
     return x
 
 
-model = torch.load("./saves/pruned_vgg_7850_7845_0_0_10_10_10_10.ptmodel")
+model = torch.load("./saves/vgg_noprune_7898_7839.ptmodel")
 
 print(model)
 util.print_nonzeros(model)

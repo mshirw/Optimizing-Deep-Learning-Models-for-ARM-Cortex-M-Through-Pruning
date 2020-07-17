@@ -125,7 +125,7 @@ def alex_quant_activate_inference(model, data):
         
     return x
 
-model = torch.load("./saves/alexnet_0_3_10_20_7575.ptmodel")
+model = torch.load("./saves/alexnet_nopruned_7722_7692.ptmodel")
 print(model)
 util.print_nonzeros(model)
 print("--- Quantization ---")
