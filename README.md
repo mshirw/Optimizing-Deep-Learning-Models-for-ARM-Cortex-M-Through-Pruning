@@ -3,7 +3,7 @@ I integrated two kinds of model pruning methods and porting to ARM-CortexM with 
 
 ## Requirement
 - Pytorch(version: 1.5.0)
-- ARM-CMSIS_5
+- [ARM-CMSIS_5](https://github.com/ARM-software/CMSIS_5)
 - NuMaker-PFM-M487(development board)
 - Ubuntu 16.04
 
@@ -12,7 +12,7 @@ I integrated two kinds of model pruning methods and porting to ARM-CortexM with 
 - Fully-connected layer pruning of [this paper](https://arxiv.org/abs/1506.02626)
 
 ## System flow
-
+![figure1](./imgs/system-flow.png)
 ## Example command
 ### Train Alexnet-Light on CIFAR10 and prune it.
 ```
