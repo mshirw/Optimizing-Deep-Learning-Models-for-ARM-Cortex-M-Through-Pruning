@@ -5,6 +5,7 @@ I integrated two kinds of model pruning methods and porting to ARM-CortexM with 
 - Pytorch(version: 1.5.0)
 - [ARM-CMSIS_5](https://github.com/ARM-software/CMSIS_5)
 - NuMaker-PFM-M487(development board)
+- Mbed OS(version: 5.15.1)
 - Ubuntu 16.04
 
 ## Pruning methods
