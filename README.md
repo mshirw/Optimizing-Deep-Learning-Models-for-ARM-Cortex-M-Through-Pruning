@@ -28,7 +28,10 @@ python pruning.py --dataset cifar10 --model alexnet-light --lr 0.001 --retrain-e
 python inference_alexnet.py
 ```
 ## Results
+#### LeNet-Light with MNIST
 ![figure2](./imgs/lenet-light-parameters.png)
+#### Alexnet-Light with CIFAR10
 ![figure3](./imgs/alexnet-light-parameters.png)
+#### VGG-Light with CIFAR10
 ![figure4](./imgs/vgg-light-parameters.png)
 
