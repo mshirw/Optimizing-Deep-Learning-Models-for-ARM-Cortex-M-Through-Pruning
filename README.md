@@ -8,5 +8,5 @@ I integrated two kinds of model pruning methods and porting to ARM-CortexM with 
 4. Ubuntu 16.04
 
 ## Pruning methods
-Convolutional layers pruning of [this paper](https://arxiv.org/abs/1608.08710)
-Fully-connected layer pruning of [this paper](https://arxiv.org/abs/1506.02626)
+1. Convolutional layers pruning of [this paper](https://arxiv.org/abs/1608.08710)
+2. Fully-connected layer pruning of [this paper](https://arxiv.org/abs/1506.02626)
