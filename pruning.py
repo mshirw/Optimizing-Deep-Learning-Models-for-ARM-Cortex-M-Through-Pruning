@@ -23,7 +23,7 @@ from prune_conv_filters import prune_network, prune_step
 os.makedirs('saves', exist_ok=True)
 
 # Training settings
-parser = argparse.ArgumentParser(description='PyTorch MNIST pruning from deep compression paper')
+parser = argparse.ArgumentParser(description='PyTorch Pruning model for ARM-CortexM.')
 parser.add_argument('--batch-size', type=int, default=50, metavar='N',
                     help='input batch size for training (default: 50)')
 parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',

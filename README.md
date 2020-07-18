@@ -2,11 +2,23 @@
 I integrated two kinds of model pruning methods and porting to ARM-CortexM with CMSIS library.
 
 ## Requirement
-1. Pytorch 1.5.0
-2. ARM-CMSIS_5
-3. NuMaker-PFM-M487(development board)
-4. Ubuntu 16.04
+- Pytorch(version: 1.5.0)
+- ARM-CMSIS_5
+- NuMaker-PFM-M487(development board)
+- Ubuntu 16.04
 
 ## Pruning methods
-1. Convolutional layers pruning of [this paper](https://arxiv.org/abs/1608.08710)
-2. Fully-connected layer pruning of [this paper](https://arxiv.org/abs/1506.02626)
+- Convolutional layers pruning of [this paper](https://arxiv.org/abs/1608.08710)
+- Fully-connected layer pruning of [this paper](https://arxiv.org/abs/1506.02626)
+
+## System flow
+
+## Example command
+### Train Alexnet-Light on CIFAR10 and prune it.
+```
+python pruning.py --dataset cifar10 --model alexnet-light --lr 0.001 --epochs 80 --retrain-epochs 80 --prune-layers conv1 conv2 conv3 conv4 --prune-channels 0 0 10 10 --sensitivity 0.8
+```
+### Load a well-trained model and prune it.
+```
+python pruning.py --dataset cifar10 --model alexnet-light --lr 0.001 --retrain-epochs 80 --prune-layers conv1 conv2 conv3 conv4 --prune-channels 0 0 10 10 --sensitivity 0.8 --no-train True --load-path .\saves\alexnet_nopruned_7722_7692.ptmodel
+```
