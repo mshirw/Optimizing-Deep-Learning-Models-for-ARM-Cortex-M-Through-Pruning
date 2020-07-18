@@ -29,8 +29,8 @@ python inference_alexnet.py
 ```
 
 ## Results
-#### Inference time was measured on NuMaker-PFM-M487.
-#### Accuracy was simulated on PC with CMSIS library.
+- Inference time was measured on NuMaker-PFM-M487.
+- Accuracy was simulated on PC with CMSIS library.
 
 #### LeNet-Light with MNIST
 ![figure2](./imgs/lenet-light-parameters.png)
