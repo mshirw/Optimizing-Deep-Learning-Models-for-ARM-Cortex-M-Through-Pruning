@@ -27,11 +27,30 @@ python pruning.py --dataset cifar10 --model alexnet-light --lr 0.001 --retrain-e
 ```
 python inference_alexnet.py
 ```
+
 ## Results
+#### Inference time was measured on NuMaker-PFM-M487.
+#### Accuracy was simulated on PC with CMSIS library.
+
 #### LeNet-Light with MNIST
 ![figure2](./imgs/lenet-light-parameters.png)
+|                |Before| After|
+|:--------------:|:----:|:----:|
+| Inference time | 30ms | 22ms |
+| Accuracy       |99.11%|98.55%|
+
 #### Alexnet-Light with CIFAR10
 ![figure3](./imgs/alexnet-light-parameters.png)
+|                |Before| After|
+|:--------------:|:----:|:----:|
+| Inference time | 20ms | 14ms |
+| Accuracy       |76.92%|75.15%|
+- The inference time of Alexnet-Light(kernel size:3x3) is higher than LeNet-Light(kernel size:5x5) because of conv kernel size.
+
 #### VGG-Light with CIFAR10
 ![figure4](./imgs/vgg-light-parameters.png)
+|                |Before| After|
+|:--------------:|:----:|:----:|
+| Inference time | 47ms | 32ms |
+| Accuracy       |78.98%|77.84%|
 
