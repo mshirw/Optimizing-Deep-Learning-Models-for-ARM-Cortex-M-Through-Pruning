@@ -13,12 +13,22 @@ I integrated two kinds of model pruning methods and porting to ARM-CortexM with 
 
 ## System flow
 ![figure1](./imgs/system-flow.png)
-## Example command
-### Train Alexnet-Light on CIFAR10 and prune it.
+
+### Example command
+#### Train Alexnet-Light on CIFAR10 and prune it.
 ```
 python pruning.py --dataset cifar10 --model alexnet-light --lr 0.001 --epochs 80 --retrain-epochs 80 --prune-layers conv1 conv2 conv3 conv4 --prune-channels 0 0 10 10 --sensitivity 0.8
 ```
-### Load a well-trained model and prune it.
+#### Load a well-trained model and prune it.
 ```
 python pruning.py --dataset cifar10 --model alexnet-light --lr 0.001 --retrain-epochs 80 --prune-layers conv1 conv2 conv3 conv4 --prune-channels 0 0 10 10 --sensitivity 0.8 --no-train True --load-path .\saves\alexnet_nopruned_7722_7692.ptmodel
 ```
+#### Quantization and generate `cortexm_weight.h` for `NuMaker-PFM-M487`
+```
+python inference_alexnet.py
+```
+## Results
+![figure2](./imgs/lenet-light-parameters.png)
+![figure3](./imgs/alexnet-light-parameters.png)
+![figure4](./imgs/vgg-light-parameters.png)
+
