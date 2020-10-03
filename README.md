@@ -46,7 +46,7 @@ python inference_alexnet.py
 |:--------------:|:----:|:----:|
 | Inference time | 20ms | 14ms |
 | Accuracy       |76.92%|75.15%|
-- The inference time of Alexnet-Light(kernel size:3x3) is higher than LeNet-Light(kernel size:5x5) because of conv kernel size.
+- The inference time of Alexnet-Light(kernel size:3x3) is lower than LeNet-Light(kernel size:5x5) because of conv kernel size.
 
 #### VGG-Light with CIFAR10
 ![figure4](./imgs/vgg-light-parameters.png)
