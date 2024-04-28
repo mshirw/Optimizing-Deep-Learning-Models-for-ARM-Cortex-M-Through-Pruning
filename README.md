@@ -1,4 +1,4 @@
-# Pruning-model-for-ARM-CortexM
+# Pruning an image classification model for ARM Cortex-M
 I integrated two types of model pruning methods and ported them to the ARM Cortex-M using the CMSIS library.
 
 ## Requirement
