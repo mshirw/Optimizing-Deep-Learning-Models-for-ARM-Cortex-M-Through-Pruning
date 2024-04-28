@@ -1,5 +1,5 @@
 # Pruning-model-for-ARM-CortexM
-I integrated two kinds of model pruning methods and porting to ARM-CortexM with CMSIS library.
+I integrated two types of model pruning methods and ported them to the ARM Cortex-M using the CMSIS library.
 
 ## Requirement
 - Pytorch(version: 1.5.0)
