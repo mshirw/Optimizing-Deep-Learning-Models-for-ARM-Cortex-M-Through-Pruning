@@ -1,4 +1,4 @@
-# Pruning an image classification model for ARM Cortex-M
+# Optimizing Deep Learning Models for ARM Cortex-M Through Pruning
 I integrated two types of model pruning methods and ported them to the ARM Cortex-M using the CMSIS library.
 
 ## Requirement
